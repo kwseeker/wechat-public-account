@@ -5,10 +5,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import top.kwseeker.wechat.publicaccount.wechatpublicaccount.util.validate.NullUtil;
 import top.kwseeker.wechat.publicaccount.wechatpublicaccount.util.ResponseUtil;
+import top.kwseeker.wechat.publicaccount.wechatpublicaccount.util.wechat.WxMessageUtil;
 import top.kwseeker.wechat.publicaccount.wechatpublicaccount.util.wechat.WxSignCheckUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -28,7 +32,7 @@ public class WechatController {
      * 首次用于校验接入签名，
      * 后面用于接收微信服务器推送过来的消息和事件
      */
-    @GetMapping("/checksign")
+    @GetMapping("/wxmessage")
     public void checkAccessSignature(HttpServletRequest request, HttpServletResponse response) {
         log.info("校验接入签名");
         String echostr = request.getParameter("echostr");
@@ -49,6 +53,40 @@ public class WechatController {
             log.error("校验接入签名失败");
             ResponseUtil.printJson(response, "");
         }
+    }
+
+    //微信消息处理
+    @PostMapping("/wxmessage")
+    public void messageHandle(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            Map<String, String> map = WxMessageUtil.xmlToMap(request);
+            String msgType = map.get("MsgType");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter printWriter = response.getWriter();
+            //判断请求类型
+            if("event".equals(msgType)) {           //事件
+                String eventType = map.get("Event");
+                if("subscribe".equals(eventType)) {     //订阅事件
+                    String replyMessage = replyMessage();
+                    String reply = WxMessageUtil.returnText(map, replyMessage);
+                    log.info("发送新用户订阅回复消息");
+                    printWriter.println(reply);
+                }
+            }
+        } catch (IOException e) {
+            log.error("出现异常：e={}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String replyMessage() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Hi，你来啦！\n\n");
+        sb.append("贴上防丢贴纸。东西丢了，扫码找回。\n\n");
+        sb.append(">>><a href=\"https://mashu.51hutui.com/#/message/1566292887997kXo6d/freshmen\">点我抽取开学签</a> 还有机会中电影票哦~\n\n");
+        sb.append("在这里，你还可以：\n");
+        sb.append(">>><a href=\" https://mashu.51hutui.com/index.html#/home\">管理贴纸上的二维码</a>\n\n");
+        return sb.toString();
     }
 
     //@GetMapping("/checksign")
