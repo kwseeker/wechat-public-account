@@ -17,7 +17,7 @@
     <properties>
         <java.version>1.8</java.version>
         <dom4j.version>1.6.1</dom4j.version>
-        <xstream.version>1.4.10</xstream.version>
+        <xstream.version>1.4.18</xstream.version>
         <fastjson.version>1.2.41</fastjson.version>
     </properties>
 
